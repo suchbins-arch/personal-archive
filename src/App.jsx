@@ -445,7 +445,11 @@ function ArchivePage(props){
       React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10,padding:"9px 12px",background:C.sf,border:"1px solid "+C.aBd,borderRadius:10}},
         React.createElement("span",{style:{fontSize:14,color:C.t3,marginTop:1,flexShrink:0}},"🔗"),
         React.createElement("input",{value:props.addUrl,onChange:function(e){props.setAddUrl(e.target.value);},onKeyDown:function(e){if(e.key==="Enter")props.onAdd();},placeholder:"https://... URL을 붙여넣고 Enter",style:{flex:1,background:"transparent",border:"none",color:C.t1,fontSize:13,outline:"none"}}),
-        React.createElement("button",{onClick:props.onAdd,disabled:props.analyzing||!props.addUrl.trim(),style:{padding:"5px 14px",background:(props.analyzing||!props.addUrl.trim())?C.mt:C.ac,color:(props.analyzing||!props.addUrl.trim())?C.t3:"#080B0F",border:"none",borderRadius:7,fontSize:12,fontWeight:600,cursor:(props.analyzing||!props.addUrl.trim())?"default":"pointer",flexShrink:0}},props.analyzing?"⟳ 분석 중...":"AI 분석")
+        React.createElement("button",{onClick:props.onAdd,disabled:props.analyzing||!props.addUrl.trim(),style:{padding:"5px 14px",background:(props.analyzing||!props.addUrl.trim())?C.mt:C.ac,color:(props.analyzing||!props.addUrl.trim())?C.t3:"#080B0F",border:"none",borderRadius:7,fontSize:12,fontWeight:600,cursor:(props.analyzing||!props.addUrl.trim())?"default":"pointer",flexShrink:0}},props.analyzing?"⟳ 분석 중...":"AI 분석"),
+        React.createElement("label",{title:"확장 프로그램에서 내보낸 JSON 가져오기",style:{padding:"5px 10px",background:C.cd,border:"1px solid "+C.bd,borderRadius:7,fontSize:12,color:C.t2,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:4}},
+          "📥 가져오기",
+          React.createElement("input",{type:"file",accept:".json",onChange:props.onImport,style:{display:"none"}})
+        )
       ),
       React.createElement("div",{style:{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}},
         React.createElement("div",{style:{position:"relative",flex:"0 0 200px"}},
@@ -745,6 +749,25 @@ export default function App(){
     }
   }
 
+  function importFromJson(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var imported=JSON.parse(ev.target.result);
+        if(!Array.isArray(imported))return;
+        setArticles(function(prev){
+          var ids=new Set(prev.map(function(a){return a.id;}));
+          var newOnes=imported.filter(function(a){return !ids.has(a.id);});
+          return newOnes.concat(prev);
+        });
+      }catch(err){console.error("JSON 파싱 오류",err);}
+    };
+    reader.readAsText(file);
+    e.target.value="";
+  }
+
   function simulateAdd(){
     if(!addUrl.trim())return;
     setAnalyzing(true);
@@ -777,7 +800,7 @@ export default function App(){
         onChangeObsidianFolder:handleChangeObsidianFolder,
       }),
       React.createElement("div",{style:{flex:1,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}},
-        page==="archive"&&React.createElement(ArchivePage,{articles:archived,search:search,setSearch:setSearch,selTag:selTag,setSelTag:setSelTag,addUrl:addUrl,setAddUrl:setAddUrl,analyzing:analyzing,onAdd:simulateAdd,onTrash:trashArt,onOpen:goDoc,C:C}),
+        page==="archive"&&React.createElement(ArchivePage,{articles:archived,search:search,setSearch:setSearch,selTag:selTag,setSelTag:setSelTag,addUrl:addUrl,setAddUrl:setAddUrl,analyzing:analyzing,onAdd:simulateAdd,onImport:importFromJson,onTrash:trashArt,onOpen:goDoc,C:C}),
         page==="document"&&active&&React.createElement(DocPage,{article:active,onBack:function(){setPage("archive");},onTrash:trashArt,onSave:function(m){setArticles(function(p){return p.map(function(a){return a.id===active.id?Object.assign({},a,{memo:m}):a;});});},onObsidianFolderChange:setObsidianFolder,C:C}),
         page==="report"&&React.createElement(ReportPage,{articles:archived,weekOff:weekOff,setWeekOff:setWeekOff,onOpen:goDoc,C:C}),
         page==="trash"&&React.createElement(TrashPage,{articles:trashed,onRestore:restoreArt,onDelete:deleteForever,C:C})
